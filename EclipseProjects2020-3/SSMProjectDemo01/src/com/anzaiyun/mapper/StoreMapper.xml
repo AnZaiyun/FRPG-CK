@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.anzaiyun.mapper.StoreMapper" >
+
+	<select id="getStoreItemsByStoreid"  parameterType="Integer" resultType="com.anzaiyun.bean.Store">
+		select t.l_sdid sdid, t.l_itemid itemid, t.vc_wplb wplb, t.vc_mc wpmc, t.l_price price,
+	       t.l_count sl, t.vc_sm sm
+		from tstore t
+		where t.l_sdid = #{storeId}
+		order by t.vc_wplb, t.l_itemid
+	</select>
+	
+	<update id="updateStoreItemsByid"   parameterType="Integer" >
+		update tstore t 
+		     set t.l_count = t.l_count - #{sl}
+		 where t.l_sdid = #{storeId} and 
+		          t.l_itemid = #{Itemid}
+	</update>
+
+  
+</mapper>

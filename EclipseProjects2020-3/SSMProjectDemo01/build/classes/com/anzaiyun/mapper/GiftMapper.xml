@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.anzaiyun.mapper.GiftMapper" >
+
+	<select id="getGiftPage" parameterType="Integer" resultType="Integer">
+	  	select count(1)
+	      from tgift t 
+	     where t.l_uid = #{luid}
+	</select>
+
+	<select id="getGiftsByUid"  parameterType="Integer" resultType="com.anzaiyun.bean.Gift">
+		select c.giftid, luid, gname, glevel, expstr, rare, sxinfo, lnum, lsfsy, sfsy
+		 from ( select b.l_giftid giftid, b.l_uid luid, b.vc_name gname, b.l_level glevel, b.l_expnow||' / '||b.l_exptop expstr, b.vc_rare rare,
+					   b.l_sfsy lsfsy,decode(b.l_sfsy, 1, '已使用', '') sfsy,
+		               (select wm_concat(decode(a.l_lbmx1,1,'HP:+',2,'MP:+',3,'ATK:+',4,'DEF:+')||a.l_sx||decode(a.l_lb,5,'%','')) 
+		                  from tgiftsx a
+		                 where a.l_giftid = b.l_giftid) sxinfo,
+		               row_number() over(partition by b.l_uid order by decode(b.vc_rare,'SSS',0,'SS',1,'S',2,'A',3,'B',4,'C',5,'D',6,7),b.l_level,b.l_giftid)  lnum
+		          from tgift b 
+		         where b.l_uid = #{uid}) c
+		where ((c.lnum &gt; (#{curpage}-1)*10 and c.lnum &lt; #{curpage}*10+1 )  or
+		       (#{curpage} = -1))
+	</select>
+	
+	<select id="getGiftsByUid2"  parameterType="Integer" resultType="com.anzaiyun.bean.Gift">
+		select c.giftid, luid, gname, glevel, expstr, rare, sxinfo, lnum, lsfsy, sfsy
+		 from ( select b.l_giftid giftid, b.l_uid luid, b.vc_name gname, b.l_level glevel, b.l_expnow||' / '||b.l_exptop expstr, b.vc_rare rare,
+		 			   b.l_sfsy lsfsy,decode(b.l_sfsy, 1, '已使用', '') sfsy,
+		               (select wm_concat(decode(a.l_lbmx1,1,'HP:+',2,'MP:+',3,'ATK:+',4,'DEF:+')||a.l_sx||decode(a.l_lb,5,'%','')) 
+		                  from tgiftsx a
+		                 where a.l_giftid = b.l_giftid) sxinfo,
+		               row_number() over(partition by b.l_uid order by b.l_giftid desc)  lnum
+		          from tgift b 
+		         where b.l_uid = #{uid}) c
+		where c.lnum &lt; #{rnumber}+1 
+	</select>
+	
+	<select id="getGiftsByGiftid"  parameterType="Integer" resultType="com.anzaiyun.bean.Gift">
+		select b.l_giftid giftid, b.l_uid luid, b.vc_name gname, b.l_level glevel, b.l_expnow||' / '||b.l_exptop expstr, b.vc_rare rare,
+			   b.l_sfsy lsfsy,decode(b.l_sfsy, 1, '已使用', '') sfsy,
+               (select wm_concat(decode(a.l_lbmx1,1,'HP:+',2,'MP:+',3,'ATK:+',4,'DEF:+')||a.l_sx||decode(a.l_lb,5,'%','')) 
+                  from tgiftsx a
+                 where a.l_giftid = b.l_giftid) sxinfo,
+               row_number() over(partition by b.l_uid order by b.l_giftid desc)  lnum
+          from tgift b 
+         where b.l_uid = #{uid}  and
+               b.l_giftid = #{giftid}
+	</select>
+	
+	<select id="getGiftsByRid"  parameterType="Integer" resultType="com.anzaiyun.bean.Gift">
+		select b.l_giftid giftid, b.l_uid luid, b.vc_name gname, b.l_level glevel, b.l_expnow||' / '||b.l_exptop expstr, b.vc_rare rare,
+			   b.l_sfsy lsfsy,decode(b.l_sfsy, 1, '已使用', '') sfsy,
+               (select wm_concat(decode(a.l_lbmx1,1,'HP:+',2,'MP:+',3,'ATK:+',4,'DEF:+')||a.l_sx||decode(a.l_lb,5,'%','')) 
+                  from tgiftsx a
+                 where a.l_giftid = b.l_giftid) sxinfo,
+               row_number() over(partition by b.l_uid order by b.l_giftid desc)  lnum
+          from tgift b ,trolegift c
+         where b.l_uid = c.l_uid  and
+         	   b.l_giftid = c.l_giftid and
+               b.l_uid = #{uid}  and
+               c.l_rid = #{rid}
+	</select>
+	
+	
+	<select id="CKGift" statementType="CALLABLE" parameterType="java.util.Map">
+	  {call pkg_frpg.pkgsp_rpg_ckgift(#{uid, mode=IN,  jdbcType=INTEGER}, #{a_l_number, mode=IN,  jdbcType=INTEGER},
+	  #{return_code, mode=OUT, jdbcType=INTEGER},#{return_str, mode=OUT,jdbcType=VARCHAR}
+	    )}
+	 </select>
+
+  
+  
+  
+  
+</mapper>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.anzaiyun.mapper.FightMapper">
+	 <select id="FightNomoral" statementType="CALLABLE" parameterType="java.util.Map">
+	  {call pkg_frpg.pkgsp_rpg_atk(#{uid, mode=IN,  jdbcType=INTEGER}, #{rid, mode=IN,  jdbcType=INTEGER},
+	  #{fnumber, mode=IN,  jdbcType=INTEGER},  #{rare, mode=IN,  jdbcType=VARCHAR},
+	  #{return_code, mode=OUT, jdbcType=INTEGER},#{return_str, mode=OUT,jdbcType=VARCHAR}
+	    )}
+	  </select>
+	  
+	  <select id="getFightLog" parameterType="Integer"   resultType="com.anzaiyun.bean.FightLog">
+		  select t.l_userid luid,r.l_rid rid,r.l_rid||'_'||r.vc_name||'_'||r.vc_rare roleinfo,
+				   t.l_result ,t.vc_log logmsg,
+				   decode(t.l_result,1,'胜利',2,'失败',0,'战斗中','无') proinfo
+			from tfightlog t ,trolefull r
+		  where t.l_userid = r.l_uid  and
+			       t.l_roleid = r.l_rid   and
+			       t.l_userid = #{uid}        and 
+			       t.l_roleid = #{rid}     and
+			        t.l_id >= (select min(l_id) 
+			                       from (select a.l_id from tfightlog a where a.l_userid = #{uid} and a.l_roleid = #{rid} and a.l_result in (1,2) order by a.l_id desc)
+			                     where rownum &lt; #{fnumber}+1)
+		   order by t.l_id
+	  </select>
+
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+	
+	<!-- 注解类通知，扫描注解类 -->
+	<!-- handler视图转发器，aop通知 -->
+	<context:component-scan base-package="com.anzaiyun.handler,com.anzaiyun.aop"></context:component-scan>
+	<!-- 开启AOP注解通知 -->
+	<aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+	
+	<!-- 配置视图解析器 -->
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix"  value = "/WEB-INF/views/"></property>
+		<!--  <property name="suffix" value = ".jsp"></property>-->
+	</bean>
+	
+	<!-- 当客户端请求一个地址时，如果没有对应的@RequestMapping注解或标签配置，服务器会将该请求交给默认的Servlet去处理（直接访问） -->
+	<mvc:default-servlet-handler/>
+	<mvc:annotation-driven></mvc:annotation-driven>
+
+</beans>

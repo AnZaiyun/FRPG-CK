@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.anzaiyun.mapper.RoleMapper">
+
+  <select id="getRoleByUid" parameterType="Integer" resultType="com.anzaiyun.bean.Role">
+  	select a.rn rnum, a.rid , a.luid, a.rname, a.rlevel, a.rare,
+             a.hp, a.mp, a.atk, a.def, a.zbid1, a.zbid2, a.giftid1,
+             b.l_expnow||' / '||b.L_EXPTOP expstr
+      from (select t.l_rid rid, t.l_uid luid, t.vc_name rname, t.l_level rlevel, t.vc_rare rare,
+                   t.l_hp hp, t.l_mp mp, t.l_atk atk, t.l_def def ,nvl(t.l_zbid1,-1) zbid1, nvl(t.l_zbid2,-1) zbid2,
+                   nvl(t.l_giftid1,-1) giftid1,
+                   row_number() over(partition by t.l_uid order by decode(t.vc_rare,'SSS',0,'SS',1,'S',2,'A',3,'B',4,'C',5,'D',6,7),t.l_level)  rn
+              from troleFull t 
+             where t.l_uid = #{Uid}) a,
+             trole b
+     where a.luid = b.l_uid and
+           a.rid = b.l_rid and
+	         ((a.rn &gt; (#{curpage}-1)*10         and
+	              a.rn &lt; #{curpage}*10+1 )  or
+	              (#{curpage} = -1))
+	 order by a.rn
+  </select>
+  
+  <select id="getRoleByRid" parameterType="Integer" resultType="com.anzaiyun.bean.Role">
+  	select t.l_rid rid, t.l_uid luid, t.vc_name rname, t.l_level rlevel, t.vc_rare rare,
+           t.l_hp hp, t.l_mp mp, t.l_atk atk, t.l_def def ,t2.l_zbid1 zbid1, t2.l_zbid2 zbid2,t2.l_giftid1 giftid1,
+           t.l_expnow||' / '||t.L_EXPTOP expstr
+      from trole t ,troleFull t2
+     where t.l_rid = t2.l_rid and
+              t.l_rid = #{lrid}
+  </select>
+  
+  <select id="getRoleFullByRid" parameterType="Integer" resultType="com.anzaiyun.bean.Role">
+  	select t.l_rid rid, t.l_uid luid, t.vc_name rname, t.l_level rlevel, t.vc_rare rare,
+           t.l_hp hp, t.l_mp mp, t.l_atk atk, t.l_def def ,t.l_zbid1 zbid1, t.l_zbid2 zbid2,
+           b.l_expnow||' / '||b.L_EXPTOP expstr,t.l_giftid1 giftid1
+      from troleFull t ,trole b
+     where t.l_uid = b.l_uid and
+           t.l_rid = b.l_rid and
+     		t.l_rid = #{lrid}
+  </select>
+  
+  <select id="getRolePage" parameterType="Integer" resultType="Integer">
+  	select count(1)
+      from troleFull t 
+     where t.l_uid = #{luid}
+  </select>
+  
+  <!--  <select id="CKRole" statementType="CALLABLE">
+  {call pkg_frpg.pkgsp_rpg_ck(#{uid, mode=IN,  jdbcType=INTEGER}, #{a_l_number, mode=IN,  jdbcType=INTEGER},
+  #{return_code, mode=OUT, jdbcType=INTEGER},#{return_str, mode=OUT,jdbcType=VARCHAR}
+    )}
+  </select> -->
+  
+ <select id="CKRole" statementType="CALLABLE" parameterType="java.util.Map">
+  {call pkg_frpg.pkgsp_rpg_ck(#{uid, mode=IN,  jdbcType=INTEGER}, #{a_l_number, mode=IN,  jdbcType=INTEGER},
+  #{return_code, mode=OUT, jdbcType=INTEGER},#{return_str, mode=OUT,jdbcType=VARCHAR}
+    )}
+  </select>
+  
+  <select id="getRoleByUid2" parameterType="Integer" resultType="com.anzaiyun.bean.Role">
+  	select a.rn rnum, a.rid , a.luid, a.rname, a.rlevel, a.rare,
+             a.hp, a.mp, a.atk, a.def, a.zbid1, a.zbid2,a.giftid1,
+             b.l_expnow||' / '||b.L_EXPTOP expstr
+      from (select t.l_rid rid, t.l_uid luid, t.vc_name rname, t.l_level rlevel, t.vc_rare rare,
+                   t.l_hp hp, t.l_mp mp, t.l_atk atk, t.l_def def ,nvl(t.l_zbid1,-1) zbid1, nvl(t.l_zbid2,-1) zbid2,
+                   nvl(t.l_giftid1,-1) giftid1,
+                   row_number() over(partition by t.l_uid order by t.l_rid desc)  rn
+              from troleFull t 
+             where t.l_uid = #{Uid}) a,
+           trole b
+     where a.luid = b.l_uid and
+           a.rid = b.l_rid and
+     	   a.rn &lt; #{rnumber}+1 
+    order by a.rn
+  </select>
+  
+  <update id="UpdateRoleZB" parameterType="Integer" >
+	  declare
+	  	zbid1_old         number(10);
+	  	zbid2_old         number(10);
+	  	v_l_hp             number(19,2);
+	    v_l_mp            number(19,2);
+	    v_l_atk            number(19,2);
+	    v_l_def            number(19,2);
+	  begin
+	    --查询原有装备
+		select nvl(t.l_zbid1,-1), nvl(t.l_zbid2,-1) into  zbid1_old, zbid2_old 
+		from trolefull t 
+		where t.l_rid = #{rid} and
+		         t.l_uid = #{uid}; 
+		         
+		--删除原有装备关联关系
+		delete from trolezb t 
+		where t.l_rid = #{rid} and
+		         t.l_uid = #{uid} and
+		         t.l_zbid in (zbid1_old,zbid2_old);
+		
+		--插入新装备的关联关系         
+		insert into trolezb (L_UID, L_RID, L_ZBID)
+		select #{uid}, #{rid}, t.l_zbid 
+		from tzb t where t.l_zbid in (#{zbid1},#{zbid2});
+		
+		--获取新装备的属性值
+		select nvl(sum(t.l_hp),0),nvl(sum(t.l_mp),0),nvl(sum(t.l_atk),0),nvl(sum(t.l_def),0) 
+                 into v_l_hp, v_l_mp, v_l_atk, v_l_def
+        from tzbfull t where t.l_uid = #{uid} and t.l_zbid in (#{zbid1},#{zbid2});
+        
+        --更新角色属性值
+        update trolefull t 
+		set (t.l_hp,t.l_mp,t.l_atk,t.l_def,t.l_zbid1,t.l_zbid2) = 
+		    (select a.l_hp + v_l_hp, a.l_mp + v_l_mp, a.l_atk + v_l_atk, a.l_def + v_l_def ,
+		    		  decode(#{zbid1},-1,'',#{zbid1}),  decode(#{zbid2},-1,'',#{zbid2})
+		     from trole a 
+		     where a.l_uid = #{uid} and 
+		           a.l_rid = #{rid}  )
+		where t.l_uid = #{uid} and
+				 t.l_rid = #{rid};
+				 
+		--原有装备更新为未占用
+		update tzbfull t 
+		set t.l_sfsy = 0
+		where t.l_uid = #{uid} and
+				 t.l_zbid in (zbid1_old,zbid2_old);
+		
+		--新装备更新为已占用
+		update tzbfull t 
+		set t.l_sfsy = 1
+		where t.l_uid = #{uid} and
+				 t.l_zbid in (#{zbid1},#{zbid2});
+				  
+	  end;
+  </update>
+  
+  <update id="UpdateRoleGift" parameterType="Integer" >
+	 declare
+       giftid1_old         number(10);
+       v_l_sx             number(19,2);
+	 begin
+	    --查询原有天赋
+	    select nvl(t.l_giftid1,-1) into giftid1_old
+	    from trolefull t 
+	    where t.l_rid = #{rid} and
+	          t.l_uid = #{uid}; 
+	             
+	    --删除原有天赋关联关系
+	    delete from trolegift t 
+	    where t.l_rid = #{rid} and
+	          t.l_uid = #{uid} and
+	          t.l_giftid in (giftid1_old);
+	    
+	    --插入新天赋的关联关系         
+	    insert into trolegift (L_UID, L_RID, l_giftid)
+	    select #{uid}, #{rid}, t.l_giftid
+	    from tgift t where t.l_giftid in (#{giftid1});
+	    
+	    --更新装备天赋id
+	    update trolefull t
+	    set t.l_giftid1 = #{giftid1}
+	    where t.l_uid = #{uid} and
+	          t.l_rid = #{rid}; 
+	    
+	    --降序更新，天赋的属性不可再百分比增加
+	    for cur_giftinfo in (select t1.l_giftid,t1.l_lb,t1.l_lbmx1,sum(t1.l_sx) l_sx
+		                           from tgiftsx t1
+		                          where t1.l_giftid in (#{giftid1})
+		                          group by t1.l_giftid,t1.l_lb,t1.l_lbmx1
+		                          order by t1.l_lb,t1.l_lbmx1 desc  )loop
+	    
+	    if cur_giftinfo.l_lb = 4 then
+	      --更新角色新天赋的属性值--数值增加型
+	      update trolefull t
+	      set (t.l_hp, t.l_mp, t.l_atk, t.l_def) = 
+	          (select a.l_hp + decode(cur_giftinfo.l_lbmx1,1,cur_giftinfo.l_sx,0),
+	                  a.l_mp + decode(cur_giftinfo.l_lbmx1,2,cur_giftinfo.l_sx,0),
+	                  a.l_atk + decode(cur_giftinfo.l_lbmx1,3,cur_giftinfo.l_sx,0),
+	                  a.l_def + decode(cur_giftinfo.l_lbmx1,4,cur_giftinfo.l_sx,0)
+	             from trolefull a
+	            where a.l_uid = #{uid} and
+	                  a.l_rid = #{rid} )
+	      where t.l_uid = #{uid} and
+	            t.l_rid = #{rid};
+	    else
+	      --更新角色新天赋的属性值--百分比增加型
+	      update trolefull t
+	      set (t.l_hp, t.l_mp, t.l_atk, t.l_def) = 
+	          (select a.l_hp * (decode(cur_giftinfo.l_lbmx1,1,cur_giftinfo.l_sx,0)/100+1),
+	                  a.l_mp * (decode(cur_giftinfo.l_lbmx1,2,cur_giftinfo.l_sx,0)/100+1),
+	                  a.l_atk * (decode(cur_giftinfo.l_lbmx1,3,cur_giftinfo.l_sx,0)/100+1),
+	                  a.l_def * (decode(cur_giftinfo.l_lbmx1,4,cur_giftinfo.l_sx,0)/100+1)
+	             from trolefull a
+	            where a.l_uid = #{uid} and
+	                  a.l_rid = #{rid} )
+	      where t.l_uid = #{uid} and
+	            t.l_rid = #{rid};
+	    end if;
+	    
+	    --原有天赋更新为未占用
+		update tgift t 
+		set t.l_sfsy = 0
+		where t.l_uid = #{uid} and
+		      t.l_giftid in (giftid1_old);
+		
+		--新天赋更新为已占用
+		update tgift t 
+		set t.l_sfsy = 1
+		where t.l_uid = #{uid} and
+			  t.l_giftid in ( #{giftid1});
+	    
+	    end loop;
+
+    end;
+  </update>
+  
+  <update id="deleteRoleByRid"  parameterType="Integer" >
+  begin
+  	--占用的装备需要解除占用状态
+  	update tzbfull t
+	set t.l_sfsy = 0 
+	where t.l_zbid in (select a.l_zbid from trolezb a where a.l_uid = #{uid} and a.l_rid = #{rid});
+	
+	delete from trole t where t.l_uid = #{uid} and t.l_rid = #{rid};
+	delete from trolefull t where t.l_uid = #{uid} and t.l_rid = #{rid};
+	delete from trolezb t where t.l_uid = #{uid} and t.l_rid = #{rid};
+	delete from trolegift t where t.l_uid = #{uid} and t.l_rid = #{rid};
+  end;
+  </update>
+  
+  <select id="getRoleGiftsx" parameterType="Integer" resultType="com.anzaiyun.bean.Role">
+  	with tmp_gift as(select t1.l_giftid,t1.l_lb,t1.l_lbmx1,sum(t1.l_sx) l_sx
+                   from tgiftsx t1
+                  where t1.l_giftid in (#{giftid})
+                  group by t1.l_giftid,t1.l_lb,t1.l_lbmx1
+                  order by t1.l_lb,t1.l_lbmx1 desc  ),
+	  --装备属性
+	  tmp_zb as (select sum(t1.l_hp) l_hp, sum(t1.l_mp) l_mp, sum(t1.l_atk) l_atk, sum(t1.l_def) l_def, t.l_uid, t.l_rid
+	               from trolezb t , tzbfull t1 
+	              where t.l_uid = #{uid} and t.l_rid = #{rid} and t.l_uid = t1.L_UID and t.l_zbid = t1.L_ZBID
+	              group by t.l_uid, t.l_rid),
+	  --角色加上装备属性，因为trolefull中的属性值为加上原有天赋的，所以需要获取未加天赋前的属性值
+	  tmp_rolefull as (select t.l_rid, t.l_uid, t.vc_name, t.l_level, t.vc_rare,
+	                        t.l_hp + nvl(t1.l_hp,0) l_hp,
+	                        t.l_mp + nvl(t1.l_mp,0) l_mp,
+	                        t.l_atk + nvl(t1.l_atk,0) l_atk,
+	                        t.l_def + nvl(t1.l_def,0) l_def
+	                     from trole t ,tmp_zb t1
+	                    where t.l_uid = t1.l_uid(+) and t.l_rid = t1.l_rid(+) and
+	                          t.l_rid = #{rid} and t.l_uid = #{uid} ),
+	  --先加上百分比型天赋的值，百分比天赋的基数不包含天赋的值                        
+	  tmp_trole5 as( select t.l_rid, t.l_uid, t.vc_name, t.l_level, t.vc_rare,
+	                        t.l_hp * nvl((select 1+a.l_sx from tmp_gift a where a.l_lb = 5 and a.l_lbmx1 = 1),1) l_hp,
+	                        t.l_mp * nvl((select 1+a.l_sx from tmp_gift a where a.l_lb = 5 and a.l_lbmx1 = 2),1) l_mp,
+	                        t.l_atk * nvl((select 1+a.l_sx from tmp_gift a where a.l_lb = 5 and a.l_lbmx1 = 3),1) l_atk,
+	                        t.l_def * nvl((select 1+a.l_sx from tmp_gift a where a.l_lb = 5 and a.l_lbmx1 = 4),1) l_def
+	                   from tmp_rolefull t 
+	                  where t.l_rid = #{rid} and t.l_uid = #{uid} )
+	  select b.l_rid rid, b.l_uid luid, b.vc_name rname, b.l_level rlevel, b.vc_rare rare,
+	         b.l_hp + nvl((select a.l_sx from tmp_gift a where a.l_lb = 4 and a.l_lbmx1 = 1),0) hp,
+	         b.l_mp + nvl((select a.l_sx from tmp_gift a where a.l_lb = 4 and a.l_lbmx1 = 2),0) mp,
+	         b.l_atk + nvl((select a.l_sx from tmp_gift a where a.l_lb = 4 and a.l_lbmx1 = 3),0) atk,
+	         b.l_def + nvl((select a.l_sx from tmp_gift a where a.l_lb = 4 and a.l_lbmx1 = 4),0) def
+	  from tmp_trole5 b
+  </select>
+  
+  
+</mapper>

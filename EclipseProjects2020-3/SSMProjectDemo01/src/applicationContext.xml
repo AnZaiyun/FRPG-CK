@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	
+	<!-- 1、mybatis的数据源 -->
+	<bean id = "config" class = "org.springframework.beans.factory.config.PreferencesPlaceholderConfigurer">
+	  <property name="locations">
+	    <array><value>classpath:db.properties</value></array>
+	  </property>    
+	</bean>
+	
+	<!-- 使用dbcp配置数据源在查询数据时会报错 Method org/apache/commons/dbcp/DelegatingResultSet.isClosed()Z is abstract-->
+	<!--  <bean id = "dataSource" class = "org.apache.commons.dbcp.BasicDataSource">
+	  <property name="driverClassName" value="${driver}"></property>
+	  <property name="url" value="${url}"></property>
+	  <property name="username" value="${username}"></property>
+	  <property name="password" value="${password}"></property>
+	</bean>-->
+	
+	 <bean id = "dataSource" class = "com.mchange.v2.c3p0.ComboPooledDataSource">
+	  <property name="driverClass" value="${driver}"></property>
+	  <property name="jdbcUrl" value="${url}"></property>
+	  <property name="user" value="${username}"></property>
+	  <property name="password" value="${password}"></property>
+	</bean>
+	
+	<!-- 2、配置mapper.xml -->
+	<bean id = "sqlSessionFacotry" class = "org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref = "dataSource"></property>
+		<property name="mapperLocations"  value = "classpath:com/anzaiyun/mapper/UserMapper.xml"></property>
+	</bean>
+	
+	<!-- 3、Spring整合Mybatis -->
+	<bean class = "org.mybatis.spring.mapper.MapperScannerConfigurer">
+	  <property name="sqlSessionFactoryBeanName" value="sqlSessionFacotry"></property>
+	  <property name="basePackage" value="com.anzaiyun.mapper"></property>
+	</bean>
+	
+	<bean id = "lockAndUnlockPwd" class = "com.anzaiyun.util.LockAndUnlockPwdImpl"></bean>
+</beans>

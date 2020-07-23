@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.anzaiyun.mapper.UserBagMapper" >
+
+	<select id="getUserBags"  parameterType="Integer" resultType="com.anzaiyun.bean.UserBag">
+		select t.l_uid luid, t.vc_itemid itemid, t2.vc_item_name wplb, t.vc_name, t.l_count lcount, t.vc_sm 
+		from tuserbag t ,tdictionaries t2 
+		where t.vc_wplb = t2.c_lemma_item and
+		      	 t2.l_dictionary_no =3 and
+				 t.l_uid = #{uid} 
+		 order by t.vc_wplb
+	</select>
+	
+	<select id="checkBagMoney" parameterType="Integer" resultType = "Integer">
+		 select t.l_count - (select #{sl}*a.l_price from tstore a where a.l_sdid = #{sdid} and a.l_itemid = #{itemid}) sysl
+	       from tuserbag t
+	     where t.l_uid = #{uid} and 
+	              t.vc_itemid = decode(#{sdid}, 1, '3', '4')
+	</select>
+	
+	
+	<update id="updateUserBagsByItemid"   parameterType="Integer">
+	begin
+		update tuserbag t 
+		     set t.l_count = t.l_count + #{sl}
+		 where t.l_uid = #{uid}   and 
+		          t.vc_itemid = to_char(#{itemid});
+			
+		if #{sdid} = 1 then --Gold
+		  update tuserbag t
+		       set t.l_count =  (select t.l_count - #{sl}*a.l_price from tstore a where a.l_sdid = 1 and a.l_itemid = #{itemid} )
+		   where t.l_uid = #{uid} and 
+		            t.vc_itemid = '3';
+		elsif #{sdid} = 2 then --Diamond
+		  update tuserbag t
+		       set t.l_count =  (select t.l_count - #{sl}*a.l_price from tstore a where a.l_sdid = 2 and a.l_itemid = #{itemid} )
+		   where t.l_uid = #{uid} and 
+		            t.vc_itemid = '4';
+		end if;
+
+	end;
+	</update>
+
+  
+  
+  
+  
+</mapper>

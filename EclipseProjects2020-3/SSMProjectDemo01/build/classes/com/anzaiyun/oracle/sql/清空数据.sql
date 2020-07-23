@@ -1,0 +1,10 @@
+delete from trole;
+delete from trolefull;
+delete from trolezb;
+delete from trolegift;
+delete from tgift;
+delete from tgiftsx;
+delete from tzbfull;
+delete from tzb;
+delete from tfightlog;
+commit;

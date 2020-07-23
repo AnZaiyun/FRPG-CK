@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.anzaiyun.mapper.UserMapper">
+
+  <select id="findUser" parameterType="com.anzaiyun.bean.User" resultType="com.anzaiyun.bean.User">
+  	select l_uid lid,vc_name uname,vc_password upassword
+  	  from tuser t 
+  	where t.vc_name = #{uname}  and
+  	         t.vc_password = #{upassword}
+  </select>
+  
+  <insert id="addUser" parameterType="com.anzaiyun.bean.User">
+  declare
+	  v_l_uid NUMBER(8);
+  begin
+      select seq_tuser_id.nextval into v_l_uid from dual;
+      
+	  insert into tuser(l_uid, vc_name, vc_password)
+	  values(v_l_uid, #{uname}, #{upassword});
+	  
+	  --插入背包信息
+	  insert into tuserbag (L_UID, VC_ITEMID, vc_wplb, VC_NAME, L_COUNT, VC_SM)
+	  values (v_l_uid, '1', '2', 'Role Paper', 10, 'Role Paper');
+		
+	  insert into tuserbag (L_UID, VC_ITEMID, vc_wplb, VC_NAME, L_COUNT, VC_SM)
+	  values (v_l_uid, '2', '2', 'ZB Paper', 10, 'ZB Paper');
+	  
+	  insert into tuserbag (L_UID, VC_ITEMID, vc_wplb, VC_NAME, L_COUNT, VC_SM)
+	  values (v_l_uid, '5', '2', 'Gift Paper', 1, 'Gift Paper');
+		
+	  insert into tuserbag (L_UID, VC_ITEMID, vc_wplb, VC_NAME, L_COUNT, VC_SM)
+	  values (v_l_uid, '3', '1', 'Gold', 1000, 'Gold');
+		
+	  insert into tuserbag (L_UID, VC_ITEMID, vc_wplb, VC_NAME, L_COUNT, VC_SM)
+	  values (v_l_uid, '4', '1', 'Diamond', 100,  'Diamond');
+  end;
+  </insert>
+  
+  <select id="getUserBagsByItemid"  resultType="com.anzaiyun.bean.UserBag">
+  	select t.l_uid luid,t.vc_itemid itemid,t.vc_name,t.vc_sm,t.l_count lcount 
+  	  from tuserbag t 
+   	where t.l_uid =#{luid} and 
+   	         instr(','||#{itemid}||',',','||t.vc_itemid||',')>0
+  </select>
+  
+  
+  
+</mapper>
