@@ -19,6 +19,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     		tzb b
     where a.zbid = b.l_zbid  and
     	  a.luid = b.l_uid
+    order by a.rn
   </select>
   
   <select id="getZbByUidWithoutUse" parameterType="Integer" resultType="com.anzaiyun.bean.ZB">
